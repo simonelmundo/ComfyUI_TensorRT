@@ -311,6 +311,16 @@ class TRT_MODEL_CONVERSION_BASE:
         self._setup_timing_cache(config)
         config.progress_monitor = TQDMProgressMonitor()
 
+        # Optimizations for PyTorch 1.12.1 + CUDA 11.6 + A4000
+        config.set_flag(trt.BuilderFlag.FP16)  # Enable FP16
+        config.set_flag(trt.BuilderFlag.STRICT_TYPES)  # Enable strongly typed
+        config.builder_optimization_level = 3  # Slightly lower optimization level for better compatibility
+        config.max_workspace_size = 1 << 29  # 512MB workspace size for A4000
+        
+        # Additional memory optimizations
+        config.set_flag(trt.BuilderFlag.TF32)  # Enable TF32 for better memory usage
+        config.set_flag(trt.BuilderFlag.SPARSE_WEIGHTS)  # Enable weight sparsity if supported
+
         prefix_encode = ""
         for k in range(len(input_names)):
             min_shape = inputs_shapes_min[k]
@@ -323,11 +333,6 @@ class TRT_MODEL_CONVERSION_BASE:
             prefix_encode += "{}#{}#{}#{};".format(
                 input_names[k], encode(min_shape), encode(opt_shape), encode(max_shape)
             )
-
-        if dtype == torch.float16:
-            config.set_flag(trt.BuilderFlag.FP16)
-        if dtype == torch.bfloat16:
-            config.set_flag(trt.BuilderFlag.BF16)
 
         config.add_optimization_profile(profile)
 

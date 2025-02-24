@@ -10,12 +10,10 @@ import comfy.supported_models
 import folder_paths
 
 if "tensorrt" in folder_paths.folder_names_and_paths:
-    folder_paths.folder_names_and_paths["tensorrt"][0].append(
-        os.path.join(folder_paths.models_dir, "tensorrt"))
+    folder_paths.folder_names_and_paths["tensorrt"][0].append("/tmp/RT")
     folder_paths.folder_names_and_paths["tensorrt"][1].add(".engine")
 else:
-    folder_paths.folder_names_and_paths["tensorrt"] = (
-        [os.path.join(folder_paths.models_dir, "tensorrt")], {".engine"})
+    folder_paths.folder_names_and_paths["tensorrt"] = (["/tmp/RT"], {".engine"})
 
 import tensorrt as trt
 

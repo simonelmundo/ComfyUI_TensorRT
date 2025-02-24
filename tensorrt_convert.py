@@ -8,20 +8,12 @@ import tensorrt as trt
 import folder_paths
 from tqdm import tqdm
 
-# TODO:
-# Make it more generic: less model specific code
-
-# add output directory to tensorrt search path
+# Update the folder paths at the beginning of the file
 if "tensorrt" in folder_paths.folder_names_and_paths:
-    folder_paths.folder_names_and_paths["tensorrt"][0].append(
-        os.path.join(folder_paths.get_output_directory(), "tensorrt")
-    )
+    folder_paths.folder_names_and_paths["tensorrt"][0].append("/tmp/RT")
     folder_paths.folder_names_and_paths["tensorrt"][1].add(".engine")
 else:
-    folder_paths.folder_names_and_paths["tensorrt"] = (
-        [os.path.join(folder_paths.get_output_directory(), "tensorrt")],
-        {".engine"},
-    )
+    folder_paths.folder_names_and_paths["tensorrt"] = (["/tmp/RT"], {".engine"})
 
 class TQDMProgressMonitor(trt.IProgressMonitor):
     def __init__(self):
@@ -96,10 +88,14 @@ class TQDMProgressMonitor(trt.IProgressMonitor):
 
 class TRT_MODEL_CONVERSION_BASE:
     def __init__(self):
-        self.output_dir = folder_paths.get_output_directory()
-        self.temp_dir = folder_paths.get_temp_directory()
+        self.output_dir = "/tmp/RT"  # Base directory for engine files
+        os.makedirs(self.output_dir, exist_ok=True)
+        
+        self.temp_dir = "/tmp/RT/temp"  # Temporary directory for conversion
+        os.makedirs(self.temp_dir, exist_ok=True)
+        
         self.timing_cache_path = os.path.normpath(
-            os.path.join(os.path.join(os.path.dirname(os.path.realpath(__file__)), "timing_cache.trt"))
+            os.path.join(self.output_dir, "timing_cache.trt")
         )
 
     RETURN_TYPES = ()
@@ -148,6 +144,7 @@ class TRT_MODEL_CONVERSION_BASE:
         num_video_frames,
         is_static: bool,
     ):
+        filename_prefix = filename_prefix.replace('tensorrt/', '')
         output_onnx = os.path.normpath(
             os.path.join(
                 os.path.join(self.temp_dir, "{}".format(time.time())), "model.onnx"
